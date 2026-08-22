@@ -1,0 +1,30 @@
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Sensitive Environment Variables
+.env
+
+# Generated Audio Output
+audio_output/*.mp3
+audio_output/*.wav
+!audio_output/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.swp
