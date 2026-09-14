@@ -1,0 +1,140 @@
+"""
+models/db.py — SQLAlchemy ORM table definitions.
+
+Tables:
+  - Source          : Knowledge base documents (seeded by ingest.py)
+  - Conversation    : A chat session
+  - Message         : Individual messages within a conversation
+  - UploadedDocument: User-uploaded PDFs
+"""
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.core.database import Base
+
+
+def _uuid() -> str:
+    return str(uuid.uuid4())
+
+
+class Source(Base):
+    """A curated knowledge-base document."""
+
+    __tablename__ = "sources"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    title: Mapped[str] = mapped_column(String(512), nullable=False)
+    url: Mapped[str] = mapped_column(String(2048), nullable=True)
+    authority: Mapped[str] = mapped_column(String(256), nullable=True)  # e.g. "IP India"
+    document_type: Mapped[str] = mapped_column(String(128), nullable=True)  # patent/trademark/faq
+    topic: Mapped[str] = mapped_column(String(256), nullable=True)
+    language: Mapped[str] = mapped_column(String(16), default="en")
+    publication_date: Mapped[str] = mapped_column(String(32), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Conversation(Base):
+    """A chat session (may span multiple messages)."""
+
+    __tablename__ = "conversations"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    language: Mapped[str] = mapped_column(String(16), default="en")
+
+    messages: Mapped[list["Message"]] = relationship(
+        "Message", back_populates="conversation", cascade="all, delete-orphan"
+    )
+
+
+class Message(Base):
+    """A single turn in a conversation (user or assistant)."""
+
+    __tablename__ = "messages"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    conversation_id: Mapped[str] = mapped_column(
+        String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)  # "user" | "assistant"
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    # JSON blobs — avoid extra normalised tables for a hackathon MVP
+    sources_json: Mapped[str] = mapped_column(Text, default="[]")     # list[SourceRef]
+    actions_json: Mapped[str] = mapped_column(Text, default="[]")     # list[Action]
+    confidence: Mapped[str] = mapped_column(String(16), nullable=True)  # HIGH/MEDIUM/LOW
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=True)
+    rating: Mapped[int] = mapped_column(Integer, nullable=True)        # 1 = 👍, -1 = 👎
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    conversation: Mapped["Conversation"] = relationship(
+        "Conversation", back_populates="messages"
+    )
+
+
+class UploadedDocument(Base):
+    """A PDF uploaded by the user for document intelligence."""
+
+    __tablename__ = "uploaded_documents"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    filename: Mapped[str] = mapped_column(String(512), nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=True)
+    extracted_text: Mapped[str] = mapped_column(Text, nullable=True)
+    # JSON blob: {doc_type, summary, deadline_date, key_requirements}
+    summary_json: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class BusinessProfile(Base):
+    """The 'Digital Twin' — a persistent business/innovator profile."""
+
+    __tablename__ = "business_profiles"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    business_name: Mapped[str] = mapped_column(String(256), nullable=True)
+    entity_type: Mapped[str] = mapped_column(String(64), nullable=True)  # Individual/Startup/MSME/University/Manufacturer
+    state_location: Mapped[str] = mapped_column(String(128), nullable=True)
+    ayush_category: Mapped[str] = mapped_column(String(64), nullable=True)  # Ayurveda/Siddha/Unani/Homeopathy/Yoga/Multi-herb/None
+    stage: Mapped[str] = mapped_column(String(64), nullable=True)  # Ideation/Formulation/Clinical Trial/Ready to Launch/Commercialized
+    brand_name: Mapped[str] = mapped_column(String(256), nullable=True)
+    product_claims: Mapped[str] = mapped_column(Text, nullable=True)
+    formulation_summary: Mapped[str] = mapped_column(Text, nullable=True)
+    active_ip_assets_json: Mapped[str] = mapped_column(Text, default="[]")  # [{type, application_number, status, filing_date}]
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ComplianceEvent(Base):
+    """A calendar entry — filing deadline, renewal, objection response, audit, etc."""
+
+    __tablename__ = "compliance_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    profile_id: Mapped[str] = mapped_column(String, ForeignKey("business_profiles.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(512), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(64), default="deadline")  # deadline/renewal/audit/hearing/manual
+    due_date: Mapped[str] = mapped_column(String(32), nullable=True)  # ISO date string
+    status: Mapped[str] = mapped_column(String(32), default="upcoming")  # upcoming/done/overdue
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(64), default="manual")  # manual/document/passport/regulation
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class TKRiskAssessment(Base):
+    """A Traditional-Knowledge sensitivity assessment for an AYUSH formulation."""
+
+    __tablename__ = "tk_risk_assessments"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    profile_id: Mapped[str] = mapped_column(String, nullable=True)
+    ingredients: Mapped[str] = mapped_column(Text, nullable=False)
+    extraction_process: Mapped[str] = mapped_column(Text, nullable=True)
+    therapeutic_claims: Mapped[str] = mapped_column(Text, nullable=True)
+    sensitivity_level: Mapped[str] = mapped_column(String(16), nullable=False)  # HIGH/MEDIUM/LOW
+    sensitivity_score: Mapped[float] = mapped_column(Float, nullable=False)
+    recommendation: Mapped[str] = mapped_column(Text, nullable=False)
+    flagged_ingredients_json: Mapped[str] = mapped_column(Text, default="[]")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

@@ -1,0 +1,190 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+/* ============================================================
+   IP-SAKTI Sahayak — Global Design System
+   "Gazette" theme: paper, ink, navy seal, brass accent.
+   Evokes an official government dossier rather than a generic
+   AI chat product.
+   ============================================================ */
+
+:root {
+  /* Paper / surfaces */
+  --paper:          #FAF8F2;
+  --paper-card:      #F3EEE0;
+  --paper-elevated:  #E9E2CD;
+
+  /* Ink */
+  --ink:            #1B1712;
+  --ink-secondary:  #4B4636;
+  --ink-muted:      #6E6754;
+
+  /* Seal navy + brass accent (no purple/indigo AI gradient) */
+  --seal-navy:      #17315C;
+  --seal-navy-2:    #2C5282;
+  --brass:          #B8862B;
+  --brass-light:    #D9AE5C;
+
+  /* Status */
+  --status-high:    #2F6B4F;
+  --status-medium:  #B8862B;
+  --status-low:     #9B3B34;
+
+  /* Borders */
+  --border:         #D9D0B8;
+  --border-strong:  #C2B695;
+}
+
+/* ============================================================
+   Base Reset & Typography
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3, .font-serif {
+  font-family: 'Source Serif 4', Georgia, serif;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   Subtle paper texture (fine grain, not a purple AI-mesh glow)
+   ============================================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(27,23,18,0.015) 0px, rgba(27,23,18,0.015) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(23,49,92,0.25);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(23,49,92,0.5); }
+
+/* ============================================================
+   Glass surface utility (light, paper-like — no dark blur)
+   ============================================================ */
+.glass {
+  background: rgba(250,248,242,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+/* ============================================================
+   Heading accent — a thin brass rule instead of gradient text
+   ============================================================ */
+.gradient-text {
+  color: var(--seal-navy);
+  border-bottom: 2px solid var(--brass);
+  padding-bottom: 2px;
+}
+
+/* ============================================================
+   Answer prose formatting
+   ============================================================ */
+.prose-answer strong { color: var(--ink); }
+.prose-answer em { color: var(--ink-muted); }
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.animate-fade-up {
+  animation: fadeSlideUp 0.35s ease-out forwards;
+}
+
+.typing-cursor::after {
+  content: '▋';
+  animation: blink 1s step-end infinite;
+  color: var(--seal-navy);
+}
+
+/* ============================================================
+   Chip / Quick-action buttons
+   ============================================================ */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: #FFFFFF;
+  color: var(--ink-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--seal-navy);
+  background: rgba(23,49,92,0.05);
+  color: var(--seal-navy);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   Source card hover — a crisp shadow, not a purple glow
+   ============================================================ */
+.source-card:hover {
+  box-shadow: 0 4px 16px rgba(27,23,18,0.10);
+}
+
+/* ============================================================
+   Loading skeleton
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(27,23,18,0.05) 25%,
+    rgba(27,23,18,0.10) 50%,
+    rgba(27,23,18,0.05) 75%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: 8px;
+}
+
+/* ============================================================
+   Utility font for badges, IDs, data
+   ============================================================ */
+.font-data {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
